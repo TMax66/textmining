@@ -10,7 +10,8 @@ library(dendextend)
 library(circlize)
 library(Rgraphviz)
 library(graph)
-
+library(tidyverse)
+library(tidytext)
 rm(list=ls())
 
 tryTolower<-function(x){
@@ -535,34 +536,70 @@ wordcloud(freq.df$word, freq.df$frequency, max.words=30, colors=c('black','darkr
 
 
 
+###################TIDY#######################
+data("stop_words")
+q10<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q10)
+my_stop_words<-rbind(c("horses",  "horse", "box", "min",
+                       "manger", "mangers", "exits", "etc"), stop_words)
+
+q10<-q10 %>%
+  unnest_tokens(word, text)
+
+q10 <-q10 %>% 
+  anti_join(stop_words)
+  
+q10 %>% 
+  count(word, sort = TRUE) 
+
+library(widyr)
+
+pairwise_count(word, sort = TRUE)
 
 
 
 
 
+q10bgr<-q10 %>%
+  unnest_tokens(ngram, text, token = "ngrams", n = 2)
+
+q10bgr %>% 
+  count(ngram, sort = TRUE)
+
+q10bsep<-q10bgr %>% 
+separate(ngram, c("word1", "word2"), sep = " ")
+
+q10bsepf <- q10bsep %>%
+  filter(!word1 %in% my_stop_words$word) %>%
+  filter(!word2 %in% my_stop_words$word) %>% 
+  count(word1, word2, sort = TRUE)# %>% 
+  #unite(ngram, word1, word2, sep = " ")
+q10bsepf<-na.omit(q10bsepf)
+
+bigram_graph <- q10bsepf %>%
+  filter(n>1) %>%
+  graph_from_data_frame()
 
 
 
+library(ggraph)
+set.seed(2017)
 
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1)
 
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
 
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+my_stop_words<-rbind(c("horses",  "horse", "box", "min",
+                       "manger", "mangers", "exits", "etc"), stop_words)
 
 
 
