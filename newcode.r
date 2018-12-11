@@ -1,5 +1,5 @@
 #setwd("~/Desktop/text analysis")
-setwd("D:/Dati/vito.tranquillo/Desktop/Rprojects/text mining elisabetta")
+#setwd("D:/Dati/vito.tranquillo/Desktop/Rprojects/text mining elisabetta")
 library(tm)
 library(wordcloud)
 library(ggplot2)
@@ -10,8 +10,9 @@ library(dendextend)
 library(circlize)
 library(Rgraphviz)
 library(graph)
-library(tidyverse)
+#library(tidyverse)
 library(tidytext)
+library(topicmodels)
 rm(list=ls())
 
 tryTolower<-function(x){
@@ -34,53 +35,32 @@ df<-read.csv('dati.csv', header = T, sep = ";", stringsAsFactors=FALSE)
 
 
 
-############################################Q10#######################################à
+##################Q10###########
 q10<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q10)
-
-
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "box", "min",
-                    "manger", "mangers", "exits", "etc")
-
-#custom.stopwords<-c(stopwords('english'))
-
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc")
 corpus <- VCorpus(DataframeSource(q10))
 corpus<-clean.corpus(corpus)
-
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "mangers", replacement = "manger")
 tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
-tdm<-removeSparseTerms(tdm,  sparse=0.975)
-freq.terms<-findFreqTerms(tdm, lowfreq = 15)
-term.freq <- rowSums(as.matrix(tdm))
-term.freq <- subset(term.freq, term.freq >= 15)
-df <- data.frame(term = names(term.freq), freq = term.freq)
-ggplot(df, aes(x = term, y = freq)) + geom_bar(stat = "identity") +
-  xlab("Terms") + ylab("Count") + coord_flip()
-
-plot(tdm, term = freq.terms, corThreshold = 0.1, weighting = T)
-
-
-
-
-
+tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q10.m<-as.matrix(tdm)
-term.freq<-rowSums(tdm.q10.m)
-freq.df<-data.frame(word=
-                      names(term.freq), frequency=term.freq)
-freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
+dim(tdm.q10.m)
 
+#####count-based evaluation#####
+term.freq<-rowSums(tdm.q10.m)
+freq.df<-data.frame(word=names(term.freq), frequency=term.freq)
+freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
 freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
 ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
-
-
-
-
-
-
-tdm<-removeSparseTerms(tdm,  sparse=0.975)
-associations<-findAssocs(tdm,'presence', 0.1)
+#####word clouds#########
+set.seed(500)
+wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
+######associations############
+associations<-findAssocs(tdm,'clean', 0.1)
 associations<-as.data.frame(associations)
 associations$terms<-row.names(associations)
 associations$terms<-factor(associations$terms, levels = associations$terms)
@@ -89,9 +69,9 @@ ggplot(associations, aes(y=terms))+
   geom_point(aes(x=clean), data=associations, size=3)+
   theme_gdocs()+geom_text(aes(x=clean, label=clean),
                           colour="darkred", hjust=-.25, size=4)+
-  theme(text=element_text(size=15),
+  theme(text=element_text(size=10),
         axis.title.y = element_blank())
-
+########Terms Network Associations#######
 
 
 
@@ -152,8 +132,7 @@ hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
 circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 
-set.seed(500)
-wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
+
 
 ############################################Q11#######################################à
 q11<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q10)
@@ -550,10 +529,6 @@ q10 <-q10 %>%
   
 q10 %>% 
   count(word, sort = TRUE) 
-
-library(widyr)
-
-pairwise_count(word, sort = TRUE)
 
 
 
