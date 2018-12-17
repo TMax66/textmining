@@ -33,7 +33,7 @@ clean.corpus<-function(corpus){
 }
 df<-read.csv('dati.csv', header = T, sep = ";", stringsAsFactors=FALSE)
 
-
+pippo
 
 ##################Q10###########
 q10<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q10)
