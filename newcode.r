@@ -13,6 +13,9 @@ library(graph)
 #library(tidyverse)
 library(tidytext)
 library(topicmodels)
+library(dplyr)
+library(tidyr)
+#library(data.table)
 rm(list=ls())
 
 tryTolower<-function(x){
@@ -33,11 +36,11 @@ clean.corpus<-function(corpus){
 }
 df<-read.csv('dati.csv', header = T, sep = ";", stringsAsFactors=FALSE)
 
-pippo
+
 
 ##################Q10###########
 q10<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q10)
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc")
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions")
 corpus <- VCorpus(DataframeSource(q10))
 corpus<-clean.corpus(corpus)
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
@@ -49,6 +52,7 @@ tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q10.m<-as.matrix(tdm)
 dim(tdm.q10.m)
 
+
 #####count-based evaluation#####
 term.freq<-rowSums(tdm.q10.m)
 freq.df<-data.frame(word=names(term.freq), frequency=term.freq)
@@ -59,54 +63,63 @@ ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fil
 #####word clouds#########
 set.seed(500)
 wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
+
+###########NETWORK#############
+
+freq.term<-findFreqTerms(tdm, lowfreq = 10)
+
+plot(tdm, term=freq.term, corThreshold = 0.2,weighting=T)
+
+
+
+
+
+
+
+
+# tdm.q10.m #matrice
+# 
+# 
+# 
+# #adjacency matrix
+# tdm.q10.m[tdm.q10.m>=1] <- 1
+# tdm2<-tdm.q10.m%*%t(tdm.q10.m)
+# 
+# tdm2[5:10,5:10]
+# tdm.g <- graph.adjacency(tdm2, weighted=TRUE, mode="undirected")
+# tdm.g<-simplify(tdm.g)
+# 
+# V(tdm.g)$label <- V(tdm.g)$name
+# V(tdm.g)$degree <- degree(tdm.g)
+# 
+# 
+# layout1 <- layout.fruchterman.reingold(tdm.g)
+# 
+# plot(tdm.g, layout=layout1, vertex.size=20, 
+#      vertex.label.color="darkred")
+
+
 ######associations############
-associations<-findAssocs(tdm,'clean', 0.1)
+associations<-findAssocs(tdm,'clean', 0.2)
 associations<-as.data.frame(associations)
 associations$terms<-row.names(associations)
 associations$terms<-factor(associations$terms, levels = associations$terms)
 
 ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=clean), data=associations, size=3)+
+  geom_point(aes(x=clean), data=associations, size=1)+
   theme_gdocs()+geom_text(aes(x=clean, label=clean),
-                          colour="darkred", hjust=-.25, size=4)+
-  theme(text=element_text(size=10),
+                          colour="darkred", hjust=-.25, size=3)+
+  theme(text=element_text(size=8),
         axis.title.y = element_blank())
-########Terms Network Associations#######
 
 
 
-clean<-q10[grep("clean", q10$text, ignore.case = T),]
-corpus <- VCorpus(DataframeSource(clean[1:3,]))
-corpus<-clean.corpus(corpus)
-corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
-corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
-corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
-clean.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
-
-f.m<-as.matrix(clean.tdm)
-f.adj<-f.m %*% t(f.m)
-f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
-f.adj<-simplify(f.adj)
-
-
-
-plot.igraph(f.adj, vertex.shape="none",
-            vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
-title(main="xxxxx")
-
-
-
-word_network_plot(clean$text[1:5])
-
-
-word_associate(clean$text, match.string = c('clean'),
-               stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
 
 
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt='n', main="title")
+plot(hc, yaxt="n",main="Q10 dendrogram", hang=0.5, cex=0.6)
 rect.hclust(hc,k=6)
 
 
@@ -134,73 +147,61 @@ circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 
 
-############################################Q11#######################################à
-q11<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q10)
-
-
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "box", "feed", "food", "feeding")
-
-#custom.stopwords<-c(stopwords('english'))
-
+############################################Q11#######################################
+q11<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q11)
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions")
 corpus <- VCorpus(DataframeSource(q11))
 corpus<-clean.corpus(corpus)
-
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "mangers", replacement = "manger")
 tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
+tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q11.m<-as.matrix(tdm)
+dim(tdm.q11.m)
+
+
+#####count-based evaluation#####
 term.freq<-rowSums(tdm.q11.m)
-freq.df<-data.frame(word=
-                      names(term.freq), frequency=term.freq)
+freq.df<-data.frame(word=names(term.freq), frequency=term.freq)
 freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
-
 freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
 ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
+#####word clouds#########
+set.seed(500)
+wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
 
+###########NETWORK#############
 
-associations<-findAssocs(tdm,'hay', 0.25)
+freq.term<-findFreqTerms(tdm, lowfreq = 10)
+
+plot(tdm, term=freq.term, corThreshold = 0.2,weighting=T)
+
+######associations############
+associations<-findAssocs(tdm,'hay', 0.2)
 associations<-as.data.frame(associations)
 associations$terms<-row.names(associations)
 associations$terms<-factor(associations$terms, levels = associations$terms)
 
 ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=hay), data=associations, size=3)+
+  geom_point(aes(x=hay), data=associations, size=1)+
   theme_gdocs()+geom_text(aes(x=hay, label=hay),
-                          colour="darkred", hjust=-.25, size=4)+
-  theme(text=element_text(size=15),
+                          colour="darkred", hjust=-.25, size=3)+
+  theme(text=element_text(size=8),
         axis.title.y = element_blank())
 
 
 
 
-hay<-q11[grep("hay", q11$text, ignore.case = T),]
-corpus <- VCorpus(DataframeSource(hay[1:3,]))
-corpus<-clean.corpus(corpus)
-clean.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
-
-f.m<-as.matrix(hay.tdm)
-f.adj<-f.m %*% t(f.m)
-f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
-f.adj<-simplify(f.adj)
-
-
-
-plot.igraph(f.adj, vertex.shape="none",
-            vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
-title(main="xxxxx")
-
-
-
-word_network_plot(hay$text[1:5])
-
-
-word_associate(clean$text, match.string = c('hay'),
-               stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
 
 
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt='n', main="title")
+plot(hc, yaxt="n",main="Q10 dendrogram", hang=0.5, cex=0.6)
+rect.hclust(hc,k=6)
 
 
 dend.change<-function(n){
@@ -225,310 +226,312 @@ hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
 circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 
-set.seed(500)
-wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
 
-############################################Q12#######################################à
-q12<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q12)
 
+# 
+# ############################################Q12#######################################?
+# q12<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q12)
+# 
+# 
+# custom.stopwords<-c(stopwords('english'), "horses",  "horse", "box", "feed", "food", "feeding", "etc", "condition")
+# 
+# #custom.stopwords<-c(stopwords('english'))
+# 
+# corpus <- VCorpus(DataframeSource(q12))
+# corpus<-clean.corpus(corpus)
+# 
+# tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
+# tdm.q12.m<-as.matrix(tdm)
+# term.freq<-rowSums(tdm.q12.m)
+# freq.df<-data.frame(word=
+#                       names(term.freq), frequency=term.freq)
+# freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
+# 
+# freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
+# ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
+#   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
+# 
+# 
+# associations<-findAssocs(tdm,'coat', 0.25)
+# associations<-as.data.frame(associations)
+# associations$terms<-row.names(associations)
+# associations$terms<-factor(associations$terms, levels = associations$terms)
+# 
+# ggplot(associations, aes(y=terms))+
+#   geom_point(aes(x=coat), data=associations, size=3)+
+#   theme_gdocs()+geom_text(aes(x=coat, label=coat),
+#                           colour="darkred", hjust=-.25, size=4)+
+#   theme(text=element_text(size=15),
+#         axis.title.y = element_blank())
+# 
+# 
+# 
+# 
+# coat<-q12[grep("coat", q12$text, ignore.case = T),]
+# corpus <- VCorpus(DataframeSource(coat[1:3,]))
+# corpus<-clean.corpus(corpus)
+# clean.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
+# 
+# f.m<-as.matrix(coat.tdm)
+# f.adj<-f.m %*% t(f.m)
+# f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
+# f.adj<-simplify(f.adj)
+# 
+# 
+# 
+# plot.igraph(f.adj, vertex.shape="none",
+#             vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
+# title(main="xxxxx")
+# 
+# 
+# 
+# word_network_plot(coat$text[1:5])
+# 
+# 
+# word_associate(clean$text, match.string = c('hay'),
+#                stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
+# 
+# 
+# tdm2<-removeSparseTerms(tdm, sparse=0.975)
+# 
+# hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
+# plot(hc, yaxt='n', main="title")
+# 
+# 
+# dend.change<-function(n){
+#   if(is.leaf(n))
+#   {
+#     a<-attributes(n)
+#     labCol<-labelColors[clusMember[which(
+#       names(clusMember)==a$label)]]
+#     attr(n, "nodePar") <-c(a$nodePar, lab.col=labCol)
+#   }
+#   n
+# }
+# 
+# hcd<-as.dendrogram(hc)
+# clusMember<-cutree(hc, 6)
+# labelColors<-c('darkgrey', 'darkred', 'black', '#bada55', "lightblue", "red")
+# clusDendro<-dendrapply(hcd, dend.change)
+# plot(clusDendro, main='title', type='triangle', yaxt='n')
+# 
+# hcd<-color_labels(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
+# hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
+# circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
+# 
+# 
+# set.seed(500)
+# wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
+# 
+# ############################################Q13#######################################?
+# q13<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q13)
+# 
+# 
+# custom.stopwords<-c(stopwords('english'), "horses",  "horse", "normal", "behaviour", "herd", "group")
+# 
+# #custom.stopwords<-c(stopwords('english'))
+# 
+# corpus <- VCorpus(DataframeSource(q13))
+# corpus<-clean.corpus(corpus)
+# 
+# tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
+# tdm.q13.m<-as.matrix(tdm)
+# term.freq<-rowSums(tdm.q13.m)
+# freq.df<-data.frame(word=
+#                       names(term.freq), frequency=term.freq)
+# freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
+# 
+# freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
+# ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
+#   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
+# 
+# 
+# associations<-findAssocs(tdm,'grazing', 0.25)
+# associations<-as.data.frame(associations)
+# associations$terms<-row.names(associations)
+# associations$terms<-factor(associations$terms, levels = associations$terms)
+# 
+# ggplot(associations, aes(y=terms))+
+#   geom_point(aes(x=grazing), data=associations, size=3)+
+#   theme_gdocs()+geom_text(aes(x=grazing, label=grazing),
+#                           colour="darkred", hjust=-.25, size=4)+
+#   theme(text=element_text(size=15),
+#         axis.title.y = element_blank())
+# 
+# 
+# grazing<-q13[grep("coat", q13$text, ignore.case = T),]
+# corpus <- VCorpus(DataframeSource(coat[1:3,]))
+# corpus<-clean.corpus(corpus)
+# clean.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
+# 
+# f.m<-as.matrix(grazing.tdm)
+# f.adj<-f.m %*% t(f.m)
+# f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
+# f.adj<-simplify(f.adj)
+# 
+# 
+# 
+# plot.igraph(f.adj, vertex.shape="none",
+#             vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
+# title(main="xxxxx")
+# 
+# 
+# 
+# word_network_plot(grazing$text[1:5])
+# 
+# 
+# word_associate(grazing$text, match.string = c('grazing'),
+#                stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
+# 
+# 
+# tdm2<-removeSparseTerms(tdm, sparse=0.975)
+# 
+# hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
+# plot(hc, yaxt='n', main="title")
+# 
+# 
+# dend.change<-function(n){
+#   if(is.leaf(n))
+#   {
+#     a<-attributes(n)
+#     labCol<-labelColors[clusMember[which(
+#       names(clusMember)==a$label)]]
+#     attr(n, "nodePar") <-c(a$nodePar, lab.col=labCol)
+#   }
+#   n
+# }
+# 
+# hcd<-as.dendrogram(hc)
+# clusMember<-cutree(hc, 6)
+# labelColors<-c('darkgrey', 'darkred', 'black', '#bada55', "lightblue", "red")
+# clusDendro<-dendrapply(hcd, dend.change)
+# plot(clusDendro, main='title', type='triangle', yaxt='n')
+# 
+# hcd<-color_labels(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
+# hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
+# circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
+# 
+# 
+# set.seed(500)
+# wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
+# 
+# ############################################Q14#######################################?
+# q14<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q14)
+# 
+# 
+# custom.stopwords<-c(stopwords('english'),  "abnormal" , "horses",  "horse", "animal", "behaviour", "herd", "group", "presence", "behaviours", "excessive")
+# 
+# #custom.stopwords<-c(stopwords('english'))
+# 
+# corpus <- VCorpus(DataframeSource(q14))
+# corpus<-clean.corpus(corpus)
+# 
+# tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
+# tdm.q14.m<-as.matrix(tdm)
+# term.freq<-rowSums(tdm.q14.m)
+# freq.df<-data.frame(word=
+#                       names(term.freq), frequency=term.freq)
+# freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
+# 
+# freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
+# ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
+#   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
+# 
+# 
+# associations<-findAssocs(tdm,'weaving', 0.25)
+# associations<-as.data.frame(associations)
+# associations$terms<-row.names(associations)
+# associations$terms<-factor(associations$terms, levels = associations$terms)
+# 
+# ggplot(associations, aes(y=terms))+
+#   geom_point(aes(x=weaving), data=associations, size=3)+
+#   theme_gdocs()+geom_text(aes(x=weaving, label=weaving),
+#                           colour="darkred", hjust=-.25, size=4)+
+#   theme(text=element_text(size=15),
+#         axis.title.y = element_blank())
+# 
+# 
+# weaving<-q14[grep("coat", q14$text, ignore.case = T),]
+# corpus <- VCorpus(DataframeSource(coat[1:3,]))
+# corpus<-clean.corpus(corpus)
+# weaving.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
+# 
+# f.m<-as.matrix(weaving.tdm)
+# f.adj<-f.m %*% t(f.m)
+# f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
+# f.adj<-simplify(f.adj)
+# 
+# 
+# 
+# plot.igraph(f.adj, vertex.shape="none",
+#             vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
+# title(main="xxxxx")
+# 
+# 
+# 
+# word_network_plot(weaving$text[1:5])
+# 
+# 
+# word_associate(weaving$text, match.string = c('weaving'),
+#                stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
+# 
+# 
+# tdm2<-removeSparseTerms(tdm, sparse=0.975)
+# 
+# hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
+# plot(hc, yaxt='n', main="title")
+# 
+# 
+# dend.change<-function(n){
+#   if(is.leaf(n))
+#   {
+#     a<-attributes(n)
+#     labCol<-labelColors[clusMember[which(
+#       names(clusMember)==a$label)]]
+#     attr(n, "nodePar") <-c(a$nodePar, lab.col=labCol)
+#   }
+#   n
+# }
+# 
+# hcd<-as.dendrogram(hc)
+# clusMember<-cutree(hc, 6)
+# labelColors<-c('darkgrey', 'darkred', 'black', '#bada55', "lightblue", "red")
+# clusDendro<-dendrapply(hcd, dend.change)
+# plot(clusDendro, main='title', type='triangle', yaxt='n')
+# 
+# hcd<-color_labels(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
+# hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
+# circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
+# 
+# 
+# set.seed(500)
+# wordcloud(freq.df$word, freq.df$frequency, max.words=30, colors=c('black','darkred'))
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+##################TIDY#######################
 
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "box", "feed", "food", "feeding", "etc", "condition")
 
-#custom.stopwords<-c(stopwords('english'))
-
-corpus <- VCorpus(DataframeSource(q12))
-corpus<-clean.corpus(corpus)
-
-tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
-tdm.q12.m<-as.matrix(tdm)
-term.freq<-rowSums(tdm.q12.m)
-freq.df<-data.frame(word=
-                      names(term.freq), frequency=term.freq)
-freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
-
-freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
-ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
-  coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
-
-
-associations<-findAssocs(tdm,'coat', 0.25)
-associations<-as.data.frame(associations)
-associations$terms<-row.names(associations)
-associations$terms<-factor(associations$terms, levels = associations$terms)
-
-ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=coat), data=associations, size=3)+
-  theme_gdocs()+geom_text(aes(x=coat, label=coat),
-                          colour="darkred", hjust=-.25, size=4)+
-  theme(text=element_text(size=15),
-        axis.title.y = element_blank())
-
-
-
-
-coat<-q12[grep("coat", q12$text, ignore.case = T),]
-corpus <- VCorpus(DataframeSource(coat[1:3,]))
-corpus<-clean.corpus(corpus)
-clean.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
-
-f.m<-as.matrix(coat.tdm)
-f.adj<-f.m %*% t(f.m)
-f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
-f.adj<-simplify(f.adj)
-
-
-
-plot.igraph(f.adj, vertex.shape="none",
-            vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
-title(main="xxxxx")
-
-
-
-word_network_plot(coat$text[1:5])
-
-
-word_associate(clean$text, match.string = c('hay'),
-               stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
-
-
-tdm2<-removeSparseTerms(tdm, sparse=0.975)
-
-hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt='n', main="title")
-
-
-dend.change<-function(n){
-  if(is.leaf(n))
-  {
-    a<-attributes(n)
-    labCol<-labelColors[clusMember[which(
-      names(clusMember)==a$label)]]
-    attr(n, "nodePar") <-c(a$nodePar, lab.col=labCol)
-  }
-  n
-}
-
-hcd<-as.dendrogram(hc)
-clusMember<-cutree(hc, 6)
-labelColors<-c('darkgrey', 'darkred', 'black', '#bada55', "lightblue", "red")
-clusDendro<-dendrapply(hcd, dend.change)
-plot(clusDendro, main='title', type='triangle', yaxt='n')
-
-hcd<-color_labels(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
-hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
-circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
-
-
-set.seed(500)
-wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
-
-############################################Q13#######################################à
-q13<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q13)
-
-
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "normal", "behaviour", "herd", "group")
-
-#custom.stopwords<-c(stopwords('english'))
-
-corpus <- VCorpus(DataframeSource(q13))
-corpus<-clean.corpus(corpus)
-
-tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
-tdm.q13.m<-as.matrix(tdm)
-term.freq<-rowSums(tdm.q13.m)
-freq.df<-data.frame(word=
-                      names(term.freq), frequency=term.freq)
-freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
-
-freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
-ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
-  coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
-
-
-associations<-findAssocs(tdm,'grazing', 0.25)
-associations<-as.data.frame(associations)
-associations$terms<-row.names(associations)
-associations$terms<-factor(associations$terms, levels = associations$terms)
-
-ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=grazing), data=associations, size=3)+
-  theme_gdocs()+geom_text(aes(x=grazing, label=grazing),
-                          colour="darkred", hjust=-.25, size=4)+
-  theme(text=element_text(size=15),
-        axis.title.y = element_blank())
-
-
-grazing<-q13[grep("coat", q13$text, ignore.case = T),]
-corpus <- VCorpus(DataframeSource(coat[1:3,]))
-corpus<-clean.corpus(corpus)
-clean.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
-
-f.m<-as.matrix(grazing.tdm)
-f.adj<-f.m %*% t(f.m)
-f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
-f.adj<-simplify(f.adj)
-
-
-
-plot.igraph(f.adj, vertex.shape="none",
-            vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
-title(main="xxxxx")
-
-
-
-word_network_plot(grazing$text[1:5])
-
-
-word_associate(grazing$text, match.string = c('grazing'),
-               stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
-
-
-tdm2<-removeSparseTerms(tdm, sparse=0.975)
-
-hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt='n', main="title")
-
-
-dend.change<-function(n){
-  if(is.leaf(n))
-  {
-    a<-attributes(n)
-    labCol<-labelColors[clusMember[which(
-      names(clusMember)==a$label)]]
-    attr(n, "nodePar") <-c(a$nodePar, lab.col=labCol)
-  }
-  n
-}
-
-hcd<-as.dendrogram(hc)
-clusMember<-cutree(hc, 6)
-labelColors<-c('darkgrey', 'darkred', 'black', '#bada55', "lightblue", "red")
-clusDendro<-dendrapply(hcd, dend.change)
-plot(clusDendro, main='title', type='triangle', yaxt='n')
-
-hcd<-color_labels(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
-hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
-circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
-
-
-set.seed(500)
-wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
-
-############################################Q14#######################################à
-q14<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q14)
-
-
-custom.stopwords<-c(stopwords('english'),  "abnormal" , "horses",  "horse", "animal", "behaviour", "herd", "group", "presence", "behaviours", "excessive")
-
-#custom.stopwords<-c(stopwords('english'))
-
-corpus <- VCorpus(DataframeSource(q14))
-corpus<-clean.corpus(corpus)
-
-tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
-tdm.q14.m<-as.matrix(tdm)
-term.freq<-rowSums(tdm.q14.m)
-freq.df<-data.frame(word=
-                      names(term.freq), frequency=term.freq)
-freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
-
-freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
-ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
-  coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
-
-
-associations<-findAssocs(tdm,'weaving', 0.25)
-associations<-as.data.frame(associations)
-associations$terms<-row.names(associations)
-associations$terms<-factor(associations$terms, levels = associations$terms)
-
-ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=weaving), data=associations, size=3)+
-  theme_gdocs()+geom_text(aes(x=weaving, label=weaving),
-                          colour="darkred", hjust=-.25, size=4)+
-  theme(text=element_text(size=15),
-        axis.title.y = element_blank())
-
-
-weaving<-q14[grep("coat", q14$text, ignore.case = T),]
-corpus <- VCorpus(DataframeSource(coat[1:3,]))
-corpus<-clean.corpus(corpus)
-weaving.tdm<-TermDocumentMatrix(corpus, control = list(weighting=weightTf))
-
-f.m<-as.matrix(weaving.tdm)
-f.adj<-f.m %*% t(f.m)
-f.adj<-graph.adjacency(f.adj, weighted = TRUE, mode="undirected", diag = T)
-f.adj<-simplify(f.adj)
-
-
-
-plot.igraph(f.adj, vertex.shape="none",
-            vertex.label.font=2, vertex.label.color="darkred", vertex.label.cex=.7, edge.color="gray85")
-title(main="xxxxx")
-
-
-
-word_network_plot(weaving$text[1:5])
-
-
-word_associate(weaving$text, match.string = c('weaving'),
-               stopwords = Top25Words, network.plot = T, cloud.colors = c('gray85', 'darkred'))
-
-
-tdm2<-removeSparseTerms(tdm, sparse=0.975)
-
-hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt='n', main="title")
-
-
-dend.change<-function(n){
-  if(is.leaf(n))
-  {
-    a<-attributes(n)
-    labCol<-labelColors[clusMember[which(
-      names(clusMember)==a$label)]]
-    attr(n, "nodePar") <-c(a$nodePar, lab.col=labCol)
-  }
-  n
-}
-
-hcd<-as.dendrogram(hc)
-clusMember<-cutree(hc, 6)
-labelColors<-c('darkgrey', 'darkred', 'black', '#bada55', "lightblue", "red")
-clusDendro<-dendrapply(hcd, dend.change)
-plot(clusDendro, main='title', type='triangle', yaxt='n')
-
-hcd<-color_labels(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
-hcd<-color_branches(hcd, 4, col=c('#bada55', 'darkgrey', 'darkred', 'black'))
-circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
-
-
-set.seed(500)
-wordcloud(freq.df$word, freq.df$frequency, max.words=30, colors=c('black','darkred'))
-
-
-
-
-
-
-
-
-
-
-###################TIDY#######################
 data("stop_words")
 q10<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q10)
-my_stop_words<-rbind(c("horses",  "horse", "box", "min",
-                       "manger", "mangers", "exits", "etc"), stop_words)
 
-q10<-q10 %>%
-  unnest_tokens(word, text)
-
-q10 <-q10 %>% 
-  anti_join(stop_words)
-  
-q10 %>% 
-  count(word, sort = TRUE) 
+# my_stop_words<-rbind(c("horses",  "horse", "animals"), stop_words)
+# 
+# q10<-q10 %>%
+#   unnest_tokens(word, text)
+# 
+# q10 <-q10 %>%
+#   anti_join(stop_words)
+# 
+# q10 %>%
+#   count(word, sort = TRUE)
 
 
 
@@ -537,18 +540,19 @@ q10 %>%
 q10bgr<-q10 %>%
   unnest_tokens(ngram, text, token = "ngrams", n = 2)
 
-q10bgr %>% 
+q10bgr %>%
   count(ngram, sort = TRUE)
 
-q10bsep<-q10bgr %>% 
+q10bsep<-q10bgr %>%
 separate(ngram, c("word1", "word2"), sep = " ")
 
 q10bsepf <- q10bsep %>%
   filter(!word1 %in% my_stop_words$word) %>%
-  filter(!word2 %in% my_stop_words$word) %>% 
-  count(word1, word2, sort = TRUE)# %>% 
+  filter(!word2 %in% my_stop_words$word) %>%
+  count(word1, word2, sort = TRUE)# %>%
   #unite(ngram, word1, word2, sep = " ")
 q10bsepf<-na.omit(q10bsepf)
+
 
 bigram_graph <- q10bsepf %>%
   filter(n>1) %>%
@@ -576,6 +580,67 @@ ggraph(bigram_graph, layout = "fr") +
 my_stop_words<-rbind(c("horses",  "horse", "box", "min",
                        "manger", "mangers", "exits", "etc"), stop_words)
 
+###############TOPIC MODELING###############
+
+dtm<-DocumentTermMatrix(corpus, control=list(weighting=weightTf))
+
+rowTotals <- apply(dtm , 1, sum) 
+dtm<-dtm.new<- dtm[rowTotals> 0, ] 
 
 
+q10lda <- LDA(dtm, k = 2, control = list(seed = 1234))
+
+q10topics <- tidy(q10lda, matrix = "beta")
+
+
+
+
+ap_top_terms <- q10topics %>%
+  group_by(topic) %>%
+  top_n(20, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+ap_top_terms %>%
+  mutate(term = reorder(term, beta)) %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  ggplot(aes(term, beta)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip()
+
+
+
+
+beta_spread <- q10topics %>%
+  mutate(topic = paste0("topic", topic)) %>%
+  spread(topic, beta) %>%
+  filter(topic1 > .001 | topic2 > .001) %>%
+  mutate(log_ratio = log2(topic2 / topic1)) %>% 
+  group_by(log_ratio < 0) %>%
+  top_n(15, abs(log_ratio)) %>%
+  ungroup() %>% 
+  mutate(word = reorder(term, log_ratio))  
+  
+
+
+
+ggplot(aes(word, log_ratio))+
+  geom_col()
+
+  # arrange(topic, -log_ratio) %>% 
+  # mutate(term = reorder(term, log_ratio)) %>%
+ # ggplot(aes(term, log_ratio)) +
+  #geom_col() +
+  #coord_flip()
+
+beta_spread %>%
+  group_by(log_ratio < 0) %>%
+  top_n(15, abs(log_ratio)) %>%
+  ungroup() %>%
+  mutate(word = reorder(term, log_ratio)) %>%
+  ggplot(aes(word, log_ratio)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  ylab("log odds ratio") 
+  
 
