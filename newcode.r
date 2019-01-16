@@ -171,7 +171,7 @@ ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fil
   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
 #####word clouds#########
 set.seed(500)
-wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
+wordcloud(freq.df$word, freq.df$frequency, max.words=200, colors=c('black','darkred'))
 
 ###########NETWORK#############
 
@@ -200,7 +200,7 @@ ggplot(associations, aes(y=terms))+
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt="n",main="Q10 dendrogram", hang=0.5, cex=0.6)
+plot(hc, yaxt="n",main="Q11 dendrogram", hang=0.5, cex=0.6)
 rect.hclust(hc,k=6)
 
 
@@ -409,7 +409,7 @@ freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
 ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
 #####word clouds#########
-set.seed(500)
+
 wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
 
 ###########NETWORK#############
@@ -472,24 +472,12 @@ circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 ##################TIDY#######################
 
-
+######bi-gram Q10#####
 data("stop_words")
 q10<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q10)
 
-# my_stop_words<-rbind(c("horses",  "horse", "animals"), stop_words)
-# 
-# q10<-q10 %>%
-#   unnest_tokens(word, text)
-# 
-# q10 <-q10 %>%
-#   anti_join(stop_words)
-# 
-# q10 %>%
-#   count(word, sort = TRUE)
-
-
-
-
+my_stop_words<-rbind(c("horses",  "horse", "box", "min",
+                       "manger", "mangers", "exits", "etc"), stop_words)
 
 q10bgr<-q10 %>%
   unnest_tokens(ngram, text, token = "ngrams", n = 2)
@@ -503,8 +491,7 @@ separate(ngram, c("word1", "word2"), sep = " ")
 q10bsepf <- q10bsep %>%
   filter(!word1 %in% my_stop_words$word) %>%
   filter(!word2 %in% my_stop_words$word) %>%
-  count(word1, word2, sort = TRUE)# %>%
-  #unite(ngram, word1, word2, sep = " ")
+  count(word1, word2, sort = TRUE)
 q10bsepf<-na.omit(q10bsepf)
 
 
@@ -531,8 +518,217 @@ ggraph(bigram_graph, layout = "fr") +
   geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
   theme_void()
 
+
+###bi-gram Q11###
+data("stop_words")
+q11<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q11)
+
 my_stop_words<-rbind(c("horses",  "horse", "box", "min",
-                       "manger", "mangers", "exits", "etc"), stop_words)
+                       "animals", "etc"), stop_words)
+
+q11bgr<-q11 %>%
+  unnest_tokens(ngram, text, token = "ngrams", n = 2)
+
+q11bgr %>%
+  count(ngram, sort = TRUE)
+
+q11bsep<-q11bgr %>%
+  separate(ngram, c("word1", "word2"), sep = " ")
+
+q11bsepf <- q11bsep %>%
+  filter(!word1 %in% my_stop_words$word) %>%
+  filter(!word2 %in% my_stop_words$word) %>%
+  count(word1, word2, sort = TRUE)
+q11bsepf<-na.omit(q11bsepf)
+
+
+bigram_graph <- q11bsepf %>%
+  filter(n>1) %>%
+  graph_from_data_frame()
+
+
+
+library(ggraph)
+set.seed(2017)
+
+# ggraph(bigram_graph, layout = "fr") +
+#   geom_edge_link() +
+#   geom_node_point() +
+#   geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+
+###bi-gram Q12###
+data("stop_words")
+q12<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q12)
+
+my_stop_words<-rbind(c("horses",  "horse", "box", "min",
+                       "animals", "etc"), stop_words)
+
+q12bgr<-q12 %>%
+  unnest_tokens(ngram, text, token = "ngrams", n = 2)
+
+q12bgr %>%
+  count(ngram, sort = TRUE)
+
+q12bsep<-q12bgr %>%
+  separate(ngram, c("word1", "word2"), sep = " ")
+
+q12bsepf <- q12bsep %>%
+  filter(!word1 %in% my_stop_words$word) %>%
+  filter(!word2 %in% my_stop_words$word) %>%
+  count(word1, word2, sort = TRUE)
+q12bsepf<-na.omit(q12bsepf)
+
+
+bigram_graph <- q12bsepf %>%
+  filter(n>1) %>%
+  graph_from_data_frame()
+
+
+
+library(ggraph)
+set.seed(2017)
+
+# ggraph(bigram_graph, layout = "fr") +
+#   geom_edge_link() +
+#   geom_node_point() +
+#   geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+###Q13-bigram###
+data("stop_words")
+q13<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q13)
+
+my_stop_words<-rbind(c("horses",  "horse", "box", "min",
+                       "animals", "etc"), stop_words)
+
+q13bgr<-q13%>%
+  unnest_tokens(ngram, text, token = "ngrams", n = 2)
+
+q13bgr %>%
+  count(ngram, sort = TRUE)
+
+q13bsep<-q13bgr %>%
+  separate(ngram, c("word1", "word2"), sep = " ")
+
+q13bsepf <- q13bsep %>%
+  filter(!word1 %in% my_stop_words$word) %>%
+  filter(!word2 %in% my_stop_words$word) %>%
+  count(word1, word2, sort = TRUE)
+q13bsepf<-na.omit(q13bsepf)
+
+
+bigram_graph <- q13bsepf %>%
+  filter(n>1) %>%
+  graph_from_data_frame()
+
+
+
+library(ggraph)
+set.seed(2017)
+
+# ggraph(bigram_graph, layout = "fr") +
+#   geom_edge_link() +
+#   geom_node_point() +
+#   geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+
+###Q14-bigram###
+data("stop_words")
+q14<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q14)
+
+my_stop_words<-rbind(c("horses",  "horse", "box", "min",
+                       "animals", "etc"), stop_words)
+
+q14bgr<-q14 %>%
+  unnest_tokens(ngram, text, token = "ngrams", n = 2)
+
+q14bgr %>%
+  count(ngram, sort = TRUE)
+
+q14bsep<-q14bgr %>%
+  separate(ngram, c("word1", "word2"), sep = " ")
+
+q14bsepf <- q14bsep %>%
+  filter(!word1 %in% my_stop_words$word) %>%
+  filter(!word2 %in% my_stop_words$word) %>%
+  count(word1, word2, sort = TRUE)
+q14bsepf<-na.omit(q14bsepf)
+
+
+bigram_graph <- q14bsepf %>%
+  filter(n>1) %>%
+  graph_from_data_frame()
+
+
+
+library(ggraph)
+set.seed(2017)
+
+# ggraph(bigram_graph, layout = "fr") +
+#   geom_edge_link() +
+#   geom_node_point() +
+#   geom_node_text(aes(label = name), vjust = 1, hjust = 1)
+
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigram_graph, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "lightblue", size = 5) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ###############TOPIC MODELING###############
 
