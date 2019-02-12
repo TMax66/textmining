@@ -40,13 +40,15 @@ df<-read.csv('dati.csv', header = T, sep = ";", stringsAsFactors=FALSE)
 
 ##################Q10###########
 q10<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q10)
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions")
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions",
+                    "good","appropriate","available","fresh","adequate","presence", "access","enough")
 corpus <- VCorpus(DataframeSource(q10))
 corpus<-clean.corpus(corpus)
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "mangers", replacement = "manger")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "litter", replacement="bedding")
 tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
 tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q10.m<-as.matrix(tdm)
@@ -119,7 +121,7 @@ ggplot(associations, aes(y=terms))+
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt="n",main="Q10 dendrogram", hang=0.5, cex=0.6)
+plot(hc, yaxt="n",main="", hang=0.5, cex=0.6)
 rect.hclust(hc,k=6)
 
 
@@ -149,13 +151,18 @@ circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 ############################################Q11#######################################
 q11<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q11)
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions")
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions",
+                    "good","adequate","enough","feeding","food","feed")
 corpus <- VCorpus(DataframeSource(q11))
 corpus<-clean.corpus(corpus)
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "mangers", replacement = "manger")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "body", replacement = "score")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "score", replacement = "body_score")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "forage", replacement = "roughage")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "hay", replacement = "roughage")
 tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
 tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q11.m<-as.matrix(tdm)
@@ -180,14 +187,14 @@ freq.term<-findFreqTerms(tdm, lowfreq = 10)
 plot(tdm, term=freq.term, corThreshold = 0.2,weighting=T)
 
 ######associations############
-associations<-findAssocs(tdm,'hay', 0.2)
+associations<-findAssocs(tdm,'roughage', 0.2)
 associations<-as.data.frame(associations)
 associations$terms<-row.names(associations)
 associations$terms<-factor(associations$terms, levels = associations$terms)
 
 ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=hay), data=associations, size=1)+
-  theme_gdocs()+geom_text(aes(x=hay, label=hay),
+  geom_point(aes(x=roughage), data=associations, size=1)+
+  theme_gdocs()+geom_text(aes(x=roughage, label=roughage),
                           colour="darkred", hjust=-.25, size=3)+
   theme(text=element_text(size=8),
         axis.title.y = element_blank())
@@ -200,7 +207,7 @@ ggplot(associations, aes(y=terms))+
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt="n",main="Q11 dendrogram", hang=0.5, cex=0.6)
+plot(hc, yaxt="n",main="", hang=0.5, cex=0.6)
 rect.hclust(hc,k=6)
 
 
@@ -229,13 +236,17 @@ circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 #############################################Q12#######################################
 q12<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q12)
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions")
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions",
+                    "look", "alert","healthy","shiny","bright","signs","feet","good")
 corpus <- VCorpus(DataframeSource(q12))
 corpus<-clean.corpus(corpus)
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "mangers", replacement = "manger")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "body", replacement = "score")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "score", replacement = "body_score")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "hair", replacement = "coat")
 tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
 tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q12.m<-as.matrix(tdm)
@@ -280,7 +291,7 @@ ggplot(associations, aes(y=terms))+
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt="n",main="Q12 dendrogram", hang=0.5, cex=0.6)
+plot(hc, yaxt="n",main="", hang=0.5, cex=0.6)
 rect.hclust(hc,k=6)
 
 
@@ -309,13 +320,17 @@ circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 ############################################Q13#######################################
 q13<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q13)
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions")
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions",
+                    "environment", "around","animals","behaviour", "normal")
 corpus <- VCorpus(DataframeSource(q13))
 corpus<-clean.corpus(corpus)
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "mangers", replacement = "manger")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "herd", replacement = "group")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "social", replacement = "interaction")
+
 tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
 tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q13.m<-as.matrix(tdm)
@@ -340,14 +355,14 @@ freq.term<-findFreqTerms(tdm, lowfreq = 10)
 plot(tdm, term=freq.term, corThreshold = 0.2,weighting=T)
 
 ######associations############
-associations<-findAssocs(tdm,'normal', 0.2)
+associations<-findAssocs(tdm,'group', 0.2)
 associations<-as.data.frame(associations)
 associations$terms<-row.names(associations)
 associations$terms<-factor(associations$terms, levels = associations$terms)
 
 ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=normal), data=associations, size=1)+
-  theme_gdocs()+geom_text(aes(x=normal, label=normal),
+  geom_point(aes(x=group), data=associations, size=1)+
+  theme_gdocs()+geom_text(aes(x=group, label=group),
                           colour="darkred", hjust=-.25, size=3)+
   theme(text=element_text(size=8),
         axis.title.y = element_blank())
@@ -360,7 +375,7 @@ ggplot(associations, aes(y=terms))+
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt="n",main="Q13 dendrogram", hang=0.5, cex=0.6)
+plot(hc, yaxt="n",main="", hang=0.5, cex=0.6)
 rect.hclust(hc,k=6)
 
 
@@ -388,13 +403,17 @@ circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 
 ############################################Q14#######################################
 q14<-data.frame(doc_id=seq(1:nrow(df)),text=df$Q14)
-custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions")
+custom.stopwords<-c(stopwords('english'), "horses",  "horse", "min", "exits", "etc", "condition", "conditions",
+                    "back","people","herd","behaviours","abnormal","animal","presence","herd","excessive","behaviour")
 corpus <- VCorpus(DataframeSource(q14))
 corpus<-clean.corpus(corpus)
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleanliness", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleaning", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "cleansing", replacement = "clean")
 corpus<-tm_map(corpus, content_transformer(gsub), pattern = "mangers", replacement = "manger")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "stereotypical", replacement = "stereotypies")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "dance", replacement = "weaving")
+corpus<-tm_map(corpus, content_transformer(gsub), pattern = "bear", replacement = "weaving")
 tdm<-TermDocumentMatrix(corpus, control=list(weighting=weightTf))
 tdm<-removeSparseTerms(tdm,  sparse=0.99)
 tdm.q14.m<-as.matrix(tdm)
@@ -419,14 +438,14 @@ freq.term<-findFreqTerms(tdm, lowfreq = 10)
 plot(tdm, term=freq.term, corThreshold = 0.2,weighting=T)
 
 ######associations############
-associations<-findAssocs(tdm,'behavior', 0.2)
+associations<-findAssocs(tdm,'weaving', 0.2)
 associations<-as.data.frame(associations)
 associations$terms<-row.names(associations)
 associations$terms<-factor(associations$terms, levels = associations$terms)
 
 ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=behavior), data=associations, size=1)+
-  theme_gdocs()+geom_text(aes(x=behavior, label=behavior),
+  geom_point(aes(x=weaving), data=associations, size=1)+
+  theme_gdocs()+geom_text(aes(x=weaving, label=weaving),
                           colour="darkred", hjust=-.25, size=3)+
   theme(text=element_text(size=8),
         axis.title.y = element_blank())
@@ -439,7 +458,7 @@ ggplot(associations, aes(y=terms))+
 tdm2<-removeSparseTerms(tdm, sparse=0.975)
 
 hc<-hclust(dist(tdm2, method = "euclidean"), method="complete")
-plot(hc, yaxt="n",main="Q10 dendrogram", hang=0.5, cex=0.6)
+plot(hc, yaxt="n",main="", hang=0.5, cex=0.6)
 rect.hclust(hc,k=6)
 
 
@@ -476,8 +495,8 @@ circlize_dendrogram(hcd, labels_track_height = 0.5, dend_track_height = 0.4)
 data("stop_words")
 q10<-data_frame(doc_id=seq(1:nrow(df)),text=df$Q10)
 
-my_stop_words<-rbind(c("horses",  "horse", "box", "min",
-                       "manger", "mangers", "exits", "etc"), stop_words)
+my_stop_words<-rbind(c("horses",  "horse", "min", "exits", "etc", "condition", "conditions",
+                       "good","appropriate","available","fresh","adequate","presence", "access","enough"), stop_words)
 
 q10bgr<-q10 %>%
   unnest_tokens(ngram, text, token = "ngrams", n = 2)
