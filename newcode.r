@@ -62,6 +62,10 @@ freq.df<-freq.df[order(freq.df[,2], decreasing=T),]
 freq.df$word<-factor(freq.df$word, levels=unique(as.character(freq.df$word)))
 ggplot(freq.df[1:20,], aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
   coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
+
+ggplot(freq.df, aes(x=word, y=frequency))+geom_bar(stat = "identity", fill='darkred')+
+  coord_flip()+theme_gdocs()+geom_text(aes(label=frequency), colour="white",hjust=1.25, size=5.0)
+
 #####word clouds#########
 set.seed(500)
 wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','darkred'))
@@ -71,6 +75,8 @@ wordcloud(freq.df$word, freq.df$frequency, max.words=100, colors=c('black','dark
 freq.term<-findFreqTerms(tdm, lowfreq = 10)
 
 plot(tdm, term=freq.term, corThreshold = 0.2,weighting=T)
+
+
 
 
 
@@ -102,17 +108,30 @@ plot(tdm, term=freq.term, corThreshold = 0.2,weighting=T)
 
 
 ######associations############
-associations<-findAssocs(tdm,'clean', 0.2)
+associations<-findAssocs(tdm,'floors', 0.2)
 associations<-as.data.frame(associations)
 associations$terms<-row.names(associations)
 associations$terms<-factor(associations$terms, levels = associations$terms)
 
 ggplot(associations, aes(y=terms))+
-  geom_point(aes(x=clean), data=associations, size=1)+
+  geom_point(aes(x=floors), data=associations, size=1)+
   theme_gdocs()+geom_text(aes(x=clean, label=clean),
                           colour="darkred", hjust=-.25, size=3)+
   theme(text=element_text(size=8),
         axis.title.y = element_blank())
+
+
+
+
+X["nome",]
+esempio
+X<-matrix(runif(100), ncol=10)
+>dimnames(X)<-list(righe=LETTERS[1:10], colonne=LETTERS[1:10])
+X
+X["B",]
+
+
+
 
 
 
